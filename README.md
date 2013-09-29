@@ -401,7 +401,7 @@ public class CustomServiceResponse<T> extends ServiceResponse<T> {
 
 #### 3. Create custom handler.
 In order to create custom handler extend `BaseClassHandler` or `BaseGenericHandler` and override `parseServiceResponse(String response)`. Look following examples.
-**For objects** 
+######For objects 
 ``` java
 public class CustomClassHandler<T> extends BaseClassHandler<T> {
 
@@ -436,7 +436,7 @@ public class CustomClassHandler<T> extends BaseClassHandler<T> {
 	}
 }
 ```
-**For collections**
+######For collections
 ``` java
 public class CustomGenericHandler<T> extends BaseGenericHandler<T> {
 
@@ -505,7 +505,7 @@ client.get("www.example.url", new CustomClassHandler<Person>(Person.class) {
 #### 4. Create custom loader.
 Creating custom loader is similar to creating custom handler.
 In order to create custom loader extend `BaseClassLoader` or `BaseGenericLoader` and override `parseServiceResponse(String response)`. Look following examples.
-**For objects** 
+######For objects
 ``` java
 public class CustomClassLoader<T> extends BaseClassLoader<T> {
 
@@ -541,7 +541,7 @@ public class CustomClassLoader<T> extends BaseClassLoader<T> {
 }
 ```
 
-**For collections**
+######For collections
 ``` java
 public class CustomGenericLoader<T> extends BaseGenericLoader<T> {
 
