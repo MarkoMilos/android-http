@@ -153,7 +153,7 @@ public class RawResponseLoaderActivty extends FragmentActivity
 
 	@Override
 	public Loader<LoaderResponse<String>> onCreateLoader(int id, Bundle bundle) {
-		RawResponseLoader loader = new RawResponseLoader(this, TestUrls.URL_SIMPLE_OBJECT);
+		RawResponseLoader loader = new RawResponseLoader(this, "www.example.com");
 		// additional loader HTTP setup
 		return loader;
 	}
@@ -284,6 +284,21 @@ public Loader<LoaderResponse<Person>> onCreateLoader(int id, Bundle bundle) {
 	loader.setUserAgent("myuseragent");
 	loader.setAuthentication("user", "pass");
 	...
+	return loader;
+}
+```
+
+or get client from loader
+``` java
+@Override
+public Loader<LoaderResponse<Person>> onCreateLoader(int id, Bundle bundle) {
+	BaseClassLoader<Person> loader = new BaseClassLoader<Person>(this, "www.example.com", Person.class);
+	
+	// Setup client
+	SyncHttpClient client = loader.getClient();
+	client.setTimeout(15000);
+	...
+	
 	return loader;
 }
 ```
