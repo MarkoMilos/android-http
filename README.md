@@ -304,4 +304,313 @@ public Loader<LoaderResponse<Person>> onCreateLoader(int id, Bundle bundle) {
 ```
 
 
-// CUSTOM JSON SCHEMA SECTION TODO
+## Custom JSON schema
+In this section will be explained how to create handlers and loaders for your own JSON schema.
+
+**NOTE**
+Handler will try to parse java objects directly from response assuming that response looks like:
+``` json
+	{
+		"name":"Marko",
+		"age":23
+	}
+```
+
+Usually we get some more informations in JSON response except simple data payload. For example lets say that our schema looks like:
+``` json
+{ 
+"meta":{ 
+	"success":false, 
+	"error_code":0, 
+	"error_message":"Example error message",
+},
+"pagination":{ 
+	"page_from":1, 
+	"page_to":4, 
+	"number_of_pages":10, 
+},
+"data":{ 
+	"name":"Marko", 
+	"age":23, 
+} 
+}
+``` 
+
+Creating handlers and loaders for this cutom JSON schema takes only few steps.
+
+#### 1. Create coresponding java objects for JSON schema elements. For our JSON schema there are 2 objects to create `Meta` and `Pagination`
+``` java
+public class Meta {
+
+	@SerializedName("success")
+	private boolean success;
+
+	@SerializedName("error_code")
+	private int errorCode;
+
+	@SerializedName("error_message")
+	private String errorMessage;
+	
+	...
+}
+```
+``` java
+public class Pagination {
+
+	@SerializedName("page_from")
+	private int pageFrom;
+
+	@SerializedName("page_to")
+	private int pageTo;
+
+	@SerializedName("number_of_pages")
+	private int numberOfPages;
+	
+	...
+}
+```
+
+#### 2. Create custom `ServiceResponse<T>` class that contains out custom JSON schema objects.
+``` java
+public class CustomServiceResponse<T> extends ServiceResponse<T> {
+
+	@SerializedName("meta")
+	private Meta meta;
+
+	@SerializedName("pagination")
+	private Pagination pagination;
+
+	public Meta getMeta() {
+		return meta;
+	}
+
+	public void setMeta(Meta meta) {
+		this.meta = meta;
+	}
+
+	public Pagination getPagination() {
+		return pagination;
+	}
+
+	public void setPagination(Pagination pagination) {
+		this.pagination = pagination;
+	}
+}
+```
+
+#### 3. Create custom handler.
+**For objects** 
+``` java
+public class CustomClassHandler<T> extends BaseClassHandler<T> {
+
+	public CustomClassHandler(Class<T> clazz) {
+		super(clazz);
+	}
+
+	@Override
+	protected ServiceResponse<T> parseServiceResponse(String response) throws GsonParsingException {
+		try {
+			// Retrive json objects from JSON schema
+			JSONObject jsonObject = new JSONObject(response);
+			JSONObject metaObject = jsonObject.getJSONObject("meta");
+			JSONObject paginationObject = jsonObject.getJSONObject("pagination");
+			JSONObject dataObject = jsonObject.getJSONObject("data");
+
+			// Use GSONParser to create object from json string
+			Meta meta = GSONParser.createObjectFromResponse(Meta.class, metaObject.toString());
+			Pagination pagination = GSONParser.createObjectFromResponse(Pagination.class, paginationObject.toString());
+			T data = GSONParser.createObjectFromResponse(clazz, dataObject.toString());
+
+			// Setup CustomServiceResponse that extends ServiceResponse class and return the result
+			CustomServiceResponse<T> customServiceResponse = new CustomServiceResponse<T>();
+			customServiceResponse.setMeta(meta);
+			customServiceResponse.setPagination(pagination);
+			customServiceResponse.setData(data);
+			return customServiceResponse;
+
+		} catch (JSONException e) {
+			throw new GsonParsingException(e.getMessage());
+		}
+	}
+}
+```
+**For collections**
+``` java
+public class CustomGenericHandler<T> extends BaseGenericHandler<T> {
+
+	public CustomGenericHandler(Type type) {
+		super(type);
+	}
+
+	@Override
+	protected ServiceResponse<T> parseServiceResponse(String response) throws GsonParsingException {
+		try {
+			// Retrive json objects from JSON schema
+			JSONObject jsonObject = new JSONObject(response);
+			JSONObject metaObject = jsonObject.getJSONObject("meta");
+			JSONObject paginationObject = jsonObject.getJSONObject("pagination");
+			JSONArray dataArray = jsonObject.getJSONArray("data");
+
+			// Use GSONParser to create object from json string
+			Meta meta = GSONParser.createObjectFromResponse(Meta.class, metaObject.toString());
+			Pagination pagination = GSONParser.createObjectFromResponse(Pagination.class, paginationObject.toString());
+			T data = GSONParser.createObjectListFromResponse(type, dataArray.toString());
+
+			// Setup CustomServiceResponse that extends ServiceResponse class and return the result
+			CustomServiceResponse<T> customServiceResponse = new CustomServiceResponse<T>();
+			customServiceResponse.setMeta(meta);
+			customServiceResponse.setPagination(pagination);
+			customServiceResponse.setData(data);
+			return customServiceResponse;
+
+		} catch (JSONException e) {
+			throw new GsonParsingException(e.getMessage());
+		}
+	}
+
+}
+```
+
+If yout JSON schema is consistent than you will need to do this only once in your project. Now use you custom handler like in example:
+``` java
+client.get("www.example.url", new CustomClassHandler<Person>(Person.class) {
+
+	@Override
+	public void onStart() {
+	}
+
+	@Override
+	public void onSuccess(ServiceResponse<Person> serviceResponse) {
+		CustomServiceResponse<Person> customServiceResponse = (CustomServiceResponse<Person>) serviceResponse;
+		
+		Meta meta = customServiceResponse.getMeta();
+		Pagination = customServiceResponse.getPagination();
+		Person = customServiceResponse.getData();
+		
+		...
+	}
+
+	@Override
+	public void onFailure(Throwable error, String content) {
+	}
+
+	@Override
+	public void onFinish() {
+	}
+});
+```
+
+#### 4. Create custom loader.
+**For objects** 
+``` java
+public class CustomClassLoader<T> extends BaseClassLoader<T> {
+
+	public CustomClassLoader(Context context, String url, Class<T> clazz) {
+		super(context, url, clazz);
+	}
+
+	@Override
+	protected ServiceResponse<T> parseServiceResponse(String response) throws GsonParsingException {
+		try {
+			// Retrive json objects from JSON schema
+			JSONObject jsonObject = new JSONObject(response);
+			JSONObject metaObject = jsonObject.getJSONObject("meta");
+			JSONObject paginationObject = jsonObject.getJSONObject("pagination");
+			JSONObject dataObject = jsonObject.getJSONObject("data");
+
+			// Use GSONParser to create object from json string
+			Meta meta = GSONParser.createObjectFromResponse(Meta.class, metaObject.toString());
+			Pagination pagination = GSONParser.createObjectFromResponse(Pagination.class, paginationObject.toString());
+			T data = GSONParser.createObjectFromResponse(clazz, dataObject.toString());
+
+			// Setup CustomServiceResponse that extends ServiceResponse class and return the result
+			CustomServiceResponse<T> customServiceResponse = new CustomServiceResponse<T>();
+			customServiceResponse.setMeta(meta);
+			customServiceResponse.setPagination(pagination);
+			customServiceResponse.setData(data);
+			return customServiceResponse;
+
+		} catch (JSONException e) {
+			throw new GsonParsingException(e.getMessage());
+		}
+	}
+}
+```
+
+**For collections**
+``` java
+public class CustomGenericLoader<T> extends BaseGenericLoader<T> {
+
+	public CustomGenericLoader(Context context, String url, Type type) {
+		super(context, url, type);
+	}
+
+	@Override
+	protected ServiceResponse<T> parseServiceResponse(String response) throws GsonParsingException {
+		try {
+			// Retrive json objects from JSON schema
+			JSONObject jsonObject = new JSONObject(response);
+			JSONObject metaObject = jsonObject.getJSONObject("meta");
+			JSONObject paginationObject = jsonObject.getJSONObject("pagination");
+			JSONArray dataArray = jsonObject.getJSONArray("data");
+
+			// Use GSONParser to create object from json string
+			Meta meta = GSONParser.createObjectFromResponse(Meta.class, metaObject.toString());
+			Pagination pagination = GSONParser.createObjectFromResponse(Pagination.class, paginationObject.toString());
+			T data = GSONParser.createObjectListFromResponse(type, dataArray.toString());
+
+			// Setup CustomServiceResponse that extends ServiceResponse class and return the result
+			CustomServiceResponse<T> customServiceResponse = new CustomServiceResponse<T>();
+			customServiceResponse.setMeta(meta);
+			customServiceResponse.setPagination(pagination);
+			customServiceResponse.setData(data);
+			return customServiceResponse;
+
+		} catch (JSONException e) {
+			throw new GsonParsingException(e.getMessage());
+		}
+	}
+}
+```
+
+If yout JSON schema is consistent than you will need to do this only once in your project. Now use you custom loader like in example:
+``` java
+public class CustomObjectLoaderActivity extends FragmentActivity implements LoaderCallbacks<LoaderResponse<Person>> {
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.loader_activity);
+
+		// Start loader request
+		getSupportLoaderManager().initLoader(0, null, this);
+	}
+
+	@Override
+	public Loader<LoaderResponse<Person>> onCreateLoader(int id, Bundle bundle) {
+		CustomClassLoader<Person> loader = new CustomClassLoader<Person>(this, "www.example.com", Person.class);
+		// additional loader HTTP setup
+		return loader;
+	}
+
+	@Override
+	public void onLoadFinished(Loader<LoaderResponse<Person>> loader, LoaderResponse<Person> result) {
+		// Check result success
+		if (result.isSuccess()) {
+			CustomServiceResponse<Person> customServiceResponse = (CustomServiceResponse<Person>) result.getServiceResponse();
+			
+			Meta meta = customServiceResponse.getMeta();
+			Pagination = customServiceResponse.getPagination();
+			Person = customServiceResponse.getData();
+			
+			...
+		} else {
+			Toast.makeText(getApplicationContext(), result.getError().getMessage(), Toast.LENGTH_LONG).show();
+		}
+	}
+
+	@Override
+	public void onLoaderReset(Loader<LoaderResponse<Person>> loader) {
+	}
+}
+```
