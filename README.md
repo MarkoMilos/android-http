@@ -316,29 +316,30 @@ Handler will try to parse java objects directly from response assuming that resp
 	}
 ```
 
-Usually we get some more informations in JSON response except simple data payload. For example lets say that our schema looks like:
+Usually we get some more informations in JSON response except simple data payload. Lets take for an example that this is our JSON schema:
 ``` json
 { 
-"meta":{ 
-	"success":false, 
-	"error_code":0, 
-	"error_message":"Example error message",
-},
-"pagination":{ 
-	"page_from":1, 
-	"page_to":4, 
-	"number_of_pages":10, 
-},
-"data":{ 
-	"name":"Marko", 
-	"age":23, 
-} 
+	"meta":{ 
+		"success":false, 
+		"error_code":0, 
+		"error_message":"Example error message",
+	},
+	"pagination":{ 
+		"page_from":1, 
+		"page_to":4, 
+		"number_of_pages":10, 
+	},
+	"data":{ 
+		"name":"Marko", 
+		"age":23, 
+	} 
 }
 ``` 
 
 Creating handlers and loaders for this cutom JSON schema takes only few steps.
 
-#### 1. Create coresponding java objects for JSON schema elements. For our JSON schema there are 2 objects to create `Meta` and `Pagination`
+#### 1. Create coresponding java objects for JSON schema elements. 
+For our JSON schema there are 2 objects to create `Meta` and `Pagination`
 ``` java
 public class Meta {
 
@@ -370,7 +371,7 @@ public class Pagination {
 }
 ```
 
-#### 2. Create custom `ServiceResponse<T>` class that contains out custom JSON schema objects.
+#### 2. Create custom `ServiceResponse<T>` class that contains our custom JSON schema objects.
 ``` java
 public class CustomServiceResponse<T> extends ServiceResponse<T> {
 
