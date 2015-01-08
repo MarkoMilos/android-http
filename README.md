@@ -1,3 +1,8 @@
+# DEPRECATED
+
+This project is now deprecated. Use more advanced libs like Retrofit with OkHttp client.
+
+
 #android-http
 
 This project aims to provide a reusable instrument for asynchronous callback-based Http client with tools to convert JSON response to POJO's.
